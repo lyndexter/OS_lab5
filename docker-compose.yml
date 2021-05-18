@@ -1,0 +1,52 @@
+version: "3.8"
+
+services: 
+
+  datasource:
+    build: database_server/
+    ports:
+      - 3307:3306
+    volumes:
+      - data_volume:/var/lib/mysql
+
+  app-server:
+    restart: on-failure
+    build: app_server/
+    depends_on: 
+      - datasource
+    links: 
+      - datasource
+    ports: 
+      - 8081:8081
+    # hostname: app-server
+
+  node-exporter:
+    image: prom/node-exporter
+    ports:
+      - '9100:9100'
+
+  
+  prometheus:
+    build: prometheus/
+    volumes:
+      - ./prometheus:/etc/prometheus/
+    ports: 
+      - 9090:9090
+    restart: on-failure
+    # hostname: prometheus
+
+  grafana:
+    image: "grafana/grafana:latest"
+    restart: on-failure
+    volumes:
+      - ./grafana:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    ports:
+      - 3000:3000
+    depends_on:
+    - prometheus
+
+  
+volumes:
+  data_volume:
+  log_volume:
